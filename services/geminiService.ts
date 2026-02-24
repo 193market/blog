@@ -1,13 +1,13 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { ColorTheme, GeneratedContent, SupplementaryInfo } from '../types';
 
-const API_KEY = process.env.API_KEY;
-
-if (!API_KEY) {
-  throw new Error("API_KEY environment variable is not set.");
-}
-
-const ai = new GoogleGenAI({ apiKey: API_KEY });
+const getAiClient = () => {
+  const API_KEY = process.env.API_KEY;
+  if (!API_KEY) {
+    throw new Error("API_KEY environment variable is not set. Please configure it in your environment settings.");
+  }
+  return new GoogleGenAI({ apiKey: API_KEY });
+};
 
 const HUMAN_LIKE_WRITING_INSTRUCTIONS_A = `
 ### **중요**: 인간과 구별 불가능한 자연스러운 글쓰기 지침 (A형)
@@ -379,7 +379,7 @@ export const generateImage = async (prompt: string, aspectRatio: '16:9' | '1:1' 
     try {
         if (!prompt) return null;
 
-        const response = await ai.models.generateContent({
+        const response = await getAiClient().models.generateContent({
             model: 'gemini-2.5-flash-image',
             contents: {
                 parts: [{ text: prompt }],
@@ -412,7 +412,7 @@ export const generateImage = async (prompt: string, aspectRatio: '16:9' | '1:1' 
 export const generateBlogPost = async (topic: string, theme: ColorTheme, shouldGenerateImage: boolean, shouldGenerateSubImages: boolean, interactiveElementIdea: string | null, rawContent: string | null, humanLikeWritingStyle: 'A' | 'B' | null, additionalRequest: string | null, aspectRatio: '16:9' | '1:1', currentDate: string): Promise<GeneratedContent> => {
   try {
     const prompt = getPrompt(topic, theme, interactiveElementIdea, rawContent, humanLikeWritingStyle, additionalRequest, currentDate);
-    const contentResponse = await ai.models.generateContent({
+    const contentResponse = await getAiClient().models.generateContent({
         model: "gemini-3-flash-preview",
         contents: prompt,
         config: {
@@ -480,7 +480,7 @@ export const generateBlogPost = async (topic: string, theme: ColorTheme, shouldG
 export const regenerateBlogPostHtml = async (originalHtml: string, feedback: string, theme: ColorTheme, currentDate: string): Promise<string> => {
     try {
         const prompt = getRegenerationPrompt(originalHtml, feedback, theme, currentDate);
-        const contentResponse = await ai.models.generateContent({
+        const contentResponse = await getAiClient().models.generateContent({
             model: "gemini-3-flash-preview",
             contents: prompt,
             config: {
@@ -539,7 +539,7 @@ const generateTopics = async (prompt: string, useSearch: boolean = false): Promi
         
         const enhancedPrompt = `${prompt}\n\n(This is a new request. Please generate a completely new and different set of suggestions. Random seed: ${Math.random()})`;
 
-        const response = await ai.models.generateContent({
+        const response = await getAiClient().models.generateContent({
             model: "gemini-3-flash-preview",
             contents: enhancedPrompt,
             config: config,
@@ -660,7 +660,7 @@ export const suggestInteractiveElementForTopic = async (topic: string): Promise<
     `;
 
     try {
-        const response = await ai.models.generateContent({
+        const response = await getAiClient().models.generateContent({
             model: "gemini-3-flash-preview",
             contents: prompt,
             config: {
